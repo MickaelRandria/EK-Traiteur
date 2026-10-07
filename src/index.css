@@ -257,24 +257,39 @@ button:disabled { cursor: default; }
 .skip-link:focus { transform: translateY(0); }
 .detail-stage { height: 420px; min-height: 350px; }
 .detail-product-wrap { width: 88%; height: 78%; margin-top: 12px; }
-.product-exploded { position: relative; width: 100%; height: 100%; }
-.product-exploded-surface { position: absolute; inset: 0 0 30px; width: 100%; border: 0; padding: 0; background: transparent; cursor: pointer; touch-action: pan-y; text-align: left; color: var(--color-sage); }
-.product-exploded-surface:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 4px; border-radius: 6px; }
-.product-exploded-whole { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 20px 22px rgba(35,38,31,.16)); }
-.product-exploded-parts { position: absolute; inset: 0; pointer-events: none; }
-.product-exploded-part { position: absolute; display: block; filter: drop-shadow(0 10px 9px rgba(35,38,31,.14)); }
-.product-exploded-part img { display: block; width: 100%; height: auto; }
-.ingredient-label { position: absolute; z-index: 2; display: block; width: 27%; font-size: clamp(9px, 1.05vw, 11px); line-height: 1.35; }
-.ingredient-label strong { display: block; font-weight: 500; }
-.ingredient-label > span { display: block; color: var(--color-sage-light); font-size: .85em; margin-top: 3px; }
-.ingredient-label-right { text-align: right; }
-.ingredient-connectors { position: absolute; inset: 0; }
-.ingredient-connectors svg { width: 100%; height: 100%; overflow: visible; }
-.ingredient-connectors path { fill: none; stroke: var(--color-sage); stroke-opacity: .4; stroke-width: .7px; vector-effect: non-scaling-stroke; }
-.ingredient-connectors circle { fill: var(--color-sage); opacity: .6; }
-.product-exploded-toggle { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #213c3125; border-radius: 999px; background: #f8f5efb3; color: var(--color-sage); font-size: 11px; white-space: nowrap; cursor: pointer; }
-.product-exploded-toggle:hover { background: var(--color-ivory); }
-.product-exploded-toggle:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 3px; }
+
+/* Bao éclaté : un axe vertical, une visite guidée des ingrédients */
+.bao-exploded { position: absolute; inset: 0; display: flex; flex-direction: column; isolation: isolate; }
+.bao-exploded-stage { position: relative; flex: 1; min-height: 0; }
+.bao-exploded-halo { position: absolute; inset: 4% 12% 2%; border-radius: 50%; background: radial-gradient(ellipse, #fffdf5d9 0%, #fffdf566 40%, transparent 72%); pointer-events: none; }
+.bao-exploded-whole { position: absolute; left: 50%; top: 50%; width: min(78%, 360px); aspect-ratio: 1; translate: -50% -50%; padding: 0; border: 0; background: none; cursor: pointer; transform-origin: 50% 85%; }
+.bao-exploded-whole img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 22px 22px rgba(35,38,31,.18)); }
+.bao-exploded-whole:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 4px; border-radius: 8px; }
+.bao-exploded-parts { position: absolute; inset: 0; pointer-events: none; }
+.bao-exploded.is-expanded .bao-exploded-parts { pointer-events: auto; }
+.bao-exploded-part { position: absolute; translate: -50% -50%; max-width: 300px; }
+.bao-exploded-part-button { position: relative; display: block; width: 100%; padding: 0; border: 0; background: none; cursor: pointer; }
+.bao-exploded-part-button img { display: block; width: 100%; height: auto; pointer-events: none; }
+.bao-exploded-part-button:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 4px; border-radius: 8px; }
+.bao-exploded-pin { position: absolute; right: -10px; top: 50%; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: var(--color-sage); box-shadow: 0 0 0 5px rgba(63,75,57,.15); }
+.bao-exploded-pin::after { content: ''; position: absolute; inset: -5px; border-radius: 50%; border: 1px solid var(--color-sage); animation: bao-pin 1.8s ease-out infinite; }
+@keyframes bao-pin { from { transform: scale(.6); opacity: .8; } to { transform: scale(2.2); opacity: 0; } }
+.bao-exploded-caption { position: relative; height: 112px; flex: none; display: flex; align-items: center; justify-content: center; padding: 0 16px; }
+.bao-exploded-closed { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.bao-exploded-tagline { font-family: var(--font-serif); font-style: italic; font-size: 19px; color: var(--color-sage-light); }
+.bao-exploded-toggle { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 22px; border-radius: 999px; background: var(--color-sage); color: var(--color-ivory); font-size: 12px; letter-spacing: .14em; text-transform: uppercase; box-shadow: 0 8px 20px rgba(33,60,49,.16); transition: transform .3s ease, background-color .3s ease; }
+.bao-exploded-toggle:hover { transform: translateY(-1px); background: var(--color-ink); }
+.bao-exploded-open { position: relative; width: 100%; max-width: 420px; display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; align-items: center; gap: 4px; padding-bottom: 26px; }
+.bao-exploded-text { text-align: center; min-height: 66px; display: flex; flex-direction: column; justify-content: center; }
+.bao-exploded-text strong { display: block; font-family: var(--font-serif); font-weight: 500; font-size: 27px; line-height: 1.05; color: var(--color-ink); }
+.bao-exploded-count { display: block; font-size: 10px; letter-spacing: .24em; text-transform: uppercase; color: var(--color-sage-light); margin-bottom: 4px; }
+.bao-exploded-note { display: block; font-size: 12.5px; line-height: 1.45; color: var(--color-ink-soft); margin-top: 4px; }
+.bao-exploded-dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+.bao-exploded-dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--color-line-strong); transition: width .3s ease, background-color .3s ease; }
+.bao-exploded-dots span.is-active { width: 16px; border-radius: 3px; background: var(--color-sage); }
+.bao-exploded-arrow { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--color-ink); transition: background-color .3s ease; }
+.bao-exploded-arrow:hover { background: rgba(35,38,31,.06); }
+.bao-exploded-reset { position: absolute; left: 50%; bottom: -6px; translate: -50% 0; display: flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; font-size: 11px; color: var(--color-muted); text-decoration: underline; text-underline-offset: 3px; text-decoration-color: var(--color-line-strong); }
 .detail-stage-price { position: absolute; bottom: 25px; right: 26px; font-size: 11px; color: var(--color-sage); }
 .detail-layout { display: grid; grid-template-columns: 1fr; }
 .reception-item { display: grid; grid-template-columns: 68px minmax(0, 1fr) auto; gap: 12px; align-items: center; }
@@ -358,3 +373,52 @@ button:disabled { cursor: default; }
   .collection-product-image, .btn-primary, .text-link { transition: none; }
   .product-stage:hover .collection-product-image { transform: none; }
 }
+
+/* Récit au défilement : le bao reste épinglé pendant que la page défile */
+.bao-story { position: relative; height: 460svh; margin-top: 8px; }
+.bao-story-sticky { position: sticky; top: 0; height: 100svh; display: grid; grid-template-rows: auto minmax(0, 1fr); padding: 84px clamp(20px, 4vw, 64px) 24px; overflow: hidden; background: radial-gradient(120% 80% at 50% 60%, #F1E6D6 0%, var(--color-ivory) 70%); }
+.bao-story-copy { position: relative; z-index: 2; min-height: 150px; display: flex; align-items: flex-start; }
+.bao-story-text { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.bao-story-text h2 { font-family: var(--font-serif); font-weight: 400; font-size: clamp(40px, 11vw, 72px); line-height: .95; letter-spacing: -.04em; }
+.bao-story-text h2 em { font-weight: 400; color: var(--color-sage); }
+.bao-story-text p { font-size: 14px; line-height: 1.7; color: var(--color-ink-soft); max-width: 30ch; }
+.bao-story-stage { position: relative; min-height: 0; }
+.bao-story-whole { position: absolute; left: 50%; top: 50%; width: min(80%, 420px); aspect-ratio: 1; translate: -50% -50%; object-fit: contain; filter: drop-shadow(0 22px 22px rgba(35,38,31,.18)); }
+.bao-story .bao-exploded-parts { pointer-events: none; }
+.bao-story .bao-exploded-part { max-width: 340px; }
+.bao-story-rail { position: absolute; right: clamp(10px, 2vw, 28px); top: 50%; height: 120px; width: 1px; margin-top: -60px; background: var(--color-line-strong); }
+.bao-story-rail span { position: absolute; inset: 0; background: var(--color-sage); transform-origin: top; }
+@media (min-width: 900px) {
+  .bao-story-sticky { grid-template-rows: 1fr; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); align-items: center; padding-top: 96px; }
+  .bao-story-copy { align-items: center; min-height: 0; }
+}
+
+/* Plateau vivant */
+.living-tray { margin-top: 20px; }
+.living-tray-surface { display: grid; grid-template-columns: repeat(auto-fill, minmax(38px, 1fr)); gap: 6px; padding: 16px; border-radius: 14px; background: linear-gradient(160deg, #EFE5D3 0%, #E6D8C0 100%); box-shadow: inset 0 0 0 1px rgba(120, 92, 52, .14), inset 0 10px 24px rgba(120, 92, 52, .12), 0 14px 30px -18px rgba(35, 38, 31, .35); }
+.living-tray-token { position: relative; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #FFFDF7 0%, #F6EEDF 70%); box-shadow: 0 3px 6px rgba(35, 38, 31, .14), inset 0 0 0 1px rgba(120, 92, 52, .1); display: flex; align-items: center; justify-content: center; overflow: visible; }
+.living-tray-token img { width: 118%; height: 118%; object-fit: contain; filter: drop-shadow(0 2px 2px rgba(35, 38, 31, .2)); pointer-events: none; }
+.living-tray-token.is-special { grid-column: span 2; grid-row: span 2; }
+.living-tray-token.is-ghost { background: transparent; box-shadow: none; border: 1px dashed rgba(63, 75, 57, .28); }
+.living-tray-token.is-more { font-size: 11px; color: var(--color-sage); }
+.living-tray-legend { margin-top: 8px; font-size: 11px; color: var(--color-muted); }
+
+/* Fiche du bao : présentation des six ingrédients avec leurs descriptions. */
+.product-exploded { position: relative; width: 100%; height: 100%; }
+.product-exploded-surface { position: absolute; inset: 0 0 30px; width: 100%; border: 0; padding: 0; background: transparent; cursor: pointer; touch-action: pan-y; text-align: left; color: var(--color-sage); }
+.product-exploded-surface:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 4px; border-radius: 6px; }
+.product-exploded-whole { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; pointer-events: none; filter: drop-shadow(0 20px 22px rgba(35,38,31,.16)); }
+.product-exploded-parts { position: absolute; inset: 0; pointer-events: none; }
+.product-exploded-part { position: absolute; display: block; filter: drop-shadow(0 10px 9px rgba(35,38,31,.14)); }
+.product-exploded-part img { display: block; width: 100%; height: auto; }
+.ingredient-label { position: absolute; z-index: 2; display: block; width: 27%; font-size: clamp(9px, 1.05vw, 11px); line-height: 1.35; }
+.ingredient-label strong { display: block; font-weight: 500; }
+.ingredient-label > span { display: block; color: var(--color-sage-light); font-size: .85em; margin-top: 3px; }
+.ingredient-label-right { text-align: right; }
+.ingredient-connectors { position: absolute; inset: 0; }
+.ingredient-connectors svg { width: 100%; height: 100%; overflow: visible; }
+.ingredient-connectors path { fill: none; stroke: var(--color-sage); stroke-opacity: .4; stroke-width: .7px; vector-effect: non-scaling-stroke; }
+.ingredient-connectors circle { fill: var(--color-sage); opacity: .6; }
+.product-exploded-toggle { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 14px; border: 1px solid #213c3125; border-radius: 999px; background: #f8f5efb3; color: var(--color-sage); font-size: 11px; white-space: nowrap; cursor: pointer; }
+.product-exploded-toggle:hover { background: var(--color-ivory); }
+.product-exploded-toggle:focus-visible { outline: 2px solid var(--color-sage); outline-offset: 3px; }

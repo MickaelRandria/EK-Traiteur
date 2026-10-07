@@ -13,6 +13,7 @@ import {
 } from '../utils/order';
 import { Page } from './ui/Page';
 import { AnimatedNumber } from './ui/AnimatedNumber';
+import { LivingTray } from './LivingTray';
 import { EASE_OUT } from './ui/motion';
 
 interface SelectionPageProps {
@@ -119,6 +120,8 @@ export const SelectionPage: React.FC<SelectionPageProps> = ({
             <div><strong>{cartItems.length}</strong><span>créations</span></div>
           </div>
         </div>
+
+        {cartItems.length > 0 && <LivingTray cartItems={cartItems} pieces={pieces} recommended={recommended} />}
 
         {recommended ? (
           <motion.div

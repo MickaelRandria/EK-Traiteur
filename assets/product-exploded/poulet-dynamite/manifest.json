@@ -1,0 +1,8 @@
+{
+  "productId": "poulet-dynamite",
+  "mode": "image_gen built-in",
+  "references": [
+    "cutouts/poulet-dynamite-isolated.webp"
+  ],
+  "prompt": "Use case: product-mockup. Generate ONE transparent ingredient sprite atlas for the poulet-dynamite recipe. The references show the product identity and photography. Match their food textures, colors, three-quarter camera view and soft studio light. Square canvas, STRICTLY SIX EQUAL CELLS: 2 columns by 3 rows. Every object must be centered inside its own cell and occupy at most 70 percent of the cell width and height, with fully transparent empty padding on all four sides. Objects must never cross a cell boundary. Reading order: TOP LEFT: three crispy chicken strips, golden-orange glaze matching reference, no vegetables, seeds or container. TOP RIGHT: small dollop of smooth orange dynamite sauce. MIDDLE LEFT: small scatter of toasted ivory sesame seeds. MIDDLE RIGHT: a small cluster of fresh young green leaves. BOTTOM LEFT: the EMPTY ecological pale bamboo boat from reference, no food or fork. BOTTOM RIGHT completely empty. Photorealistic independent product cutouts, no backgrounds, checkerboards, grid lines, labels, lettering, cast shadows outside objects, plates or utensils unless explicitly specified. This is an asset sheet to be cropped into ingredients for an interactive website, not a finished diagram."
+}

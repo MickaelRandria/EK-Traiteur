@@ -6,6 +6,7 @@ import { getRecommendedPieces, OCCASIONS, RECEPTION_FORMATS } from '../utils/ord
 import { Page } from './ui/Page';
 import { AnimatedNumber } from './ui/AnimatedNumber';
 import { EASE_OUT } from './ui/motion';
+import { haptic } from '../utils/haptics';
 
 interface EventComposerProps {
   open: boolean;
@@ -79,7 +80,7 @@ export const EventComposer: React.FC<EventComposerProps> = ({ open, onClose, ini
                   key={o.id}
                   type="button"
                   aria-pressed={active}
-                  onClick={() => setOccasion(o.id)}
+                  onClick={() => { haptic('tick'); setOccasion(o.id); }}
                   className={`relative h-14 rounded-[2px] border font-serif text-[20px] transition-colors duration-300 ${
                     active ? 'border-sage text-ivory' : 'border-line-strong text-ink hover:border-sage'
                   }`}
@@ -103,7 +104,7 @@ export const EventComposer: React.FC<EventComposerProps> = ({ open, onClose, ini
           <div className="flex items-center gap-1" role="group" aria-labelledby="guests-label">
             <button
               type="button"
-              onClick={() => changeGuests(-GUEST_STEP)}
+              onClick={() => { haptic('tick'); changeGuests(-GUEST_STEP); }}
               disabled={plan.guests <= MIN_GUESTS}
               aria-label="Moins d'invités"
               className="round-btn"
@@ -127,7 +128,7 @@ export const EventComposer: React.FC<EventComposerProps> = ({ open, onClose, ini
             </span>
             <button
               type="button"
-              onClick={() => changeGuests(GUEST_STEP)}
+              onClick={() => { haptic('tick'); changeGuests(GUEST_STEP); }}
               disabled={plan.guests >= MAX_GUESTS}
               aria-label="Plus d'invités"
               className="round-btn"
@@ -146,7 +147,7 @@ export const EventComposer: React.FC<EventComposerProps> = ({ open, onClose, ini
                 key={f.id}
                 type="button"
                 aria-pressed={active}
-                onClick={() => setFormat(f.id)}
+                onClick={() => { haptic('tick'); setFormat(f.id); }}
                 className={`flex items-center justify-between h-[52px] px-4 rounded-[2px] border text-sm transition-all duration-300 ${
                   active ? 'border-sage bg-cream font-normal' : 'border-line-strong hover:border-sage'
                 }`}

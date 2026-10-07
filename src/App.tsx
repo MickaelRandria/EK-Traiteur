@@ -6,6 +6,7 @@ import { MENU_DATA, DIET_FILTERS, DietFilter } from './data/menuData';
 export { MENU_DATA };
 import { Header } from './components/Header';
 import { Hero } from './components/Hero';
+import { BaoStory } from './components/BaoStory';
 import { MenuGrid } from './components/MenuGrid';
 import { SelectionBar } from './components/SelectionBar';
 import { SelectionPage } from './components/SelectionPage';
@@ -22,6 +23,7 @@ import { SplashIntro, useSplash, SPLASH_DURATION } from './components/SplashIntr
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { usePersistentState } from './hooks/usePersistentState';
+import { haptic } from './utils/haptics';
 import { EASE_OUT } from './components/ui/motion';
 import {
   describeEvent,
@@ -156,6 +158,7 @@ export default function App() {
       }
       return [...prev, { item, quantity: isQuote ? 1 : quantity }];
     });
+    haptic('tap');
     // Un retour discret suffit : le produit reste visible pendant la sélection.
     if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       launchFlyer(item.cutout ?? item.image, origin);
@@ -170,6 +173,7 @@ export default function App() {
   };
 
   const handleUpdateQuantity = (id: string, quantity: number) => {
+    haptic('tick');
     if (quantity <= 0) {
       handleRemove(id);
       return;
@@ -181,6 +185,7 @@ export default function App() {
 
   const handleToggleFavorite = (item: MenuItem) => {
     const exists = favorites.some((fav) => fav.id === item.id);
+    haptic(exists ? 'tick' : 'tap');
     setFavorites((prev) => (exists ? prev.filter((fav) => fav.id !== item.id) : [...prev, item]));
     showToast(exists ? 'Retiré de vos favoris' : 'Ajouté à vos favoris');
   };
@@ -206,6 +211,7 @@ export default function App() {
 
   const handleEventConfirmed = (plan: EventPlan) => {
     setEventPlan(plan);
+    haptic('tap');
     setIsComposerOpen(false);
     showToast(`Réception enregistrée : environ ${getRecommendedPieces(plan)} pièces conseillées`);
     if (!isSelectionOpen) setTimeout(scrollToMenu, 450);
@@ -213,6 +219,7 @@ export default function App() {
 
   const handleOrderConfirmed = (order: OrderSubmission) => {
     setLastOrder(order);
+    haptic('success');
     setIsCheckoutOpen(false);
     setIsSelectionOpen(false);
     setIsConfirmationOpen(true);
@@ -275,6 +282,13 @@ export default function App() {
               onCompose={() => setIsComposerOpen(true)}
               onBrowse={scrollToMenu}
               eventSummary={eventPlan ? describeEvent(eventPlan) : null}
+            />
+
+            <BaoStory
+              onOpenBao={() => {
+                const bao = findMenuItem('bao-poulet');
+                if (bao) openItem(bao, false);
+              }}
             />
 
             <MenuGrid

@@ -1,0 +1,9 @@
+{
+  "productId": "plateau-signature",
+  "mode": "image_gen built-in",
+  "references": [
+    "plateau-signature.jpg",
+    "cutouts/plateau-signature-isolated.webp"
+  ],
+  "prompt": "Use case: product-mockup. Generate ONE transparent ingredient sprite atlas for the plateau-signature recipe. The references show the product identity and photography. Match their food textures, colors, three-quarter camera view and soft studio light. Square canvas, STRICTLY SIX EQUAL CELLS: 2 columns by 3 rows. Every object must be centered inside its own cell and occupy at most 70 percent of the cell width and height, with fully transparent empty padding on all four sides. Objects must never cross a cell boundary. Reading order: TOP LEFT: one golden oval sesame brioche navette sandwich matching reference with its existing visible filling. TOP RIGHT: one miniature cone-shaped wrap bite matching reference, no paper wrapper. MIDDLE LEFT: two small round filled savory brioche bites, golden soft bread. MIDDLE RIGHT: a small dollop of pale savory artisan mousse/spread, without bowl or utensils. BOTH BOTTOM CELLS completely empty. These are four separate assortment elements; do not invent a specific filling recipe. Photorealistic independent product cutouts, no backgrounds, checkerboards, grid lines, labels, lettering, cast shadows outside objects, plates or utensils unless explicitly specified. This is an asset sheet to be cropped into ingredients for an interactive website, not a finished diagram."
+}

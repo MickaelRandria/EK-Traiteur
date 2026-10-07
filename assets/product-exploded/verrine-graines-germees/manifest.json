@@ -1,0 +1,9 @@
+{
+  "productId": "verrine-graines-germees",
+  "mode": "image_gen built-in",
+  "references": [
+    "cutouts/verrine-graines-germees-isolated.webp",
+    "verrine-graines-germees.jpg"
+  ],
+  "prompt": "Use case: product-mockup. Generate ONE transparent ingredient sprite atlas for the verrine-graines-germees recipe. The references show the product identity and photography. Match their food textures, colors, three-quarter camera view and soft studio light. Square canvas, STRICTLY SIX EQUAL CELLS: 2 columns by 3 rows. Every object must be centered inside its own cell and occupy at most 70 percent of the cell width and height, with fully transparent empty padding on all four sides. Objects must never cross a cell boundary. Reading order: TOP LEFT: an isolated dollop of creamy ivory homemade veloute matching reference texture, no cup, no sprouts. TOP RIGHT: small airy nest of crisp fresh sprouts, yellow-green and white with a few black seeds and pink shoots matching reference. MIDDLE LEFT: one whole miniature golden brioche burger matching burger in reference. MIDDLE RIGHT: a small glossy green puddle of herb-infused oil, no bowl or bottle. BOTH BOTTOM CELLS completely empty. Photorealistic independent product cutouts, no backgrounds, checkerboards, grid lines, labels, lettering, cast shadows outside objects, plates or utensils unless explicitly specified. This is an asset sheet to be cropped into ingredients for an interactive website, not a finished diagram."
+}

@@ -1,0 +1,9 @@
+{
+  "productId": "mignardises-sucrees",
+  "mode": "image_gen built-in",
+  "references": [
+    "cutouts/mignardises-sucrees-isolated.webp",
+    "mignardises-sucrees.jpg"
+  ],
+  "prompt": "Use case: product-mockup. Generate ONE transparent ingredient sprite atlas for the mignardises-sucrees recipe. The references show the product identity and photography. Match their food textures, colors, three-quarter camera view and soft studio light. Square canvas, STRICTLY SIX EQUAL CELLS: 2 columns by 3 rows. Every object must be centered inside its own cell and occupy at most 70 percent of the cell width and height, with fully transparent empty padding on all four sides. Objects must never cross a cell boundary. Reading order: TOP LEFT: one EMPTY miniature golden butter shortcrust tart shell matching reference fruit tart, no filling or fruit. TOP RIGHT: a small cluster of seasonal red and exotic fruits matching reference strawberries and kiwi. MIDDLE LEFT: isolated pale ivory mascarpone cream dollop matching reference texture, no glass or biscuit. MIDDLE RIGHT: glossy small dollop of golden salted butter caramel sauce, no container. BOTTOM LEFT: a small cluster of crunchy speculoos biscuit shards and crumbs matching reference. BOTTOM RIGHT completely empty. Photorealistic independent product cutouts, no backgrounds, checkerboards, grid lines, labels, lettering, cast shadows outside objects, plates or utensils unless explicitly specified. This is an asset sheet to be cropped into ingredients for an interactive website, not a finished diagram."
+}

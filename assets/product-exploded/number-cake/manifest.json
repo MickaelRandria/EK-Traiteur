@@ -1,0 +1,8 @@
+{
+  "productId": "number-cake",
+  "mode": "image_gen built-in",
+  "references": [
+    "cutouts/number-cake-isolated.webp"
+  ],
+  "prompt": "Use case: product-mockup. Generate ONE transparent ingredient sprite atlas for the number-cake recipe. The references show the product identity and photography. Match their food textures, colors, three-quarter camera view and soft studio light. Square canvas, STRICTLY SIX EQUAL CELLS: 2 columns by 3 rows. Every object must be centered inside its own cell and occupy at most 70 percent of the cell width and height, with fully transparent empty padding on all four sides. Objects must never cross a cell boundary. Reading order: TOP LEFT: a single almond shortcrust biscuit layer shaped like the digit 3 in reference, EMPTY without cream, fruit or decorations. TOP RIGHT: a few piped dollops of ivory Madagascar vanilla whipped ganache, no biscuit. MIDDLE LEFT: a small cluster of fresh strawberry halves, raspberries, blueberries and blackberries. MIDDLE RIGHT: two small artisan pink and ivory macarons matching reference. BOTTOM LEFT: a small cluster of edible pink and yellow flowers with tiny gold decorative flakes. BOTTOM RIGHT completely empty. No meringue, extra ingredients or text. Photorealistic independent product cutouts, no backgrounds, checkerboards, grid lines, labels, lettering, cast shadows outside objects, plates or utensils unless explicitly specified. This is an asset sheet to be cropped into ingredients for an interactive website, not a finished diagram."
+}
