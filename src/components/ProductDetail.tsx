@@ -10,7 +10,7 @@ import { useLockBodyScroll } from '../hooks/useLockBodyScroll';
 import { useDialogFocus } from '../hooks/useDialogFocus';
 import { EASE_OUT, fadeTransition } from './ui/motion';
 import { TiltCard } from './ui/TiltCard';
-import { ProductSpin } from './ui/ProductSpin';
+import { ProductExploded } from './ui/ProductExploded';
 
 interface ProductDetailProps {
   item: MenuItem | null;
@@ -47,7 +47,7 @@ export const ProductDetail: React.FC<ProductDetailProps> = ({ item, open, shared
               <button type="button" onClick={onClose} aria-label="Retour aux créations" className="absolute z-10 top-4 left-4 icon-btn bg-ivory/80"><ChevronLeft className="w-5 h-5" strokeWidth={1.3} /></button>
               <button type="button" onClick={() => onToggleFavorite(item)} aria-label={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'} aria-pressed={isFavorite} className="absolute z-10 top-4 right-4 icon-btn bg-ivory/80"><Heart className={`w-[18px] h-[18px] ${isFavorite ? 'fill-sage text-sage' : ''}`} strokeWidth={1.3} /></button>
               <div className="detail-product-wrap">
-                {item.id === 'bao-poulet' ? <ProductSpin name={item.name} imageRef={imageRef} /> : item.cutout ? <TiltCard variant="object" maskSrc={item.cutout} className="w-full h-full"><img ref={imageRef} src={item.cutout} alt={item.name} width="1200" height="1200" className="w-full h-full object-contain drop-shadow-[0_20px_22px_rgba(35,38,31,0.16)]" /></TiltCard> :
+                {item.id === 'bao-poulet' ? <ProductExploded name={item.name} imageRef={imageRef} /> : item.cutout ? <TiltCard variant="object" maskSrc={item.cutout} className="w-full h-full"><img ref={imageRef} src={item.cutout} alt={item.name} width="1200" height="1200" className="w-full h-full object-contain drop-shadow-[0_20px_22px_rgba(35,38,31,0.16)]" /></TiltCard> :
                 <motion.img ref={imageRef} layoutId={sharedImage ? `product-image-${item.id}` : undefined} src={item.image} alt={item.name} className="w-full h-full object-contain" />}
               </div>
               <span className="detail-stage-price">{isQuoteItem(item) ? 'Création sur mesure' : `${formatPrice(item.price)} / pièce`}</span>
