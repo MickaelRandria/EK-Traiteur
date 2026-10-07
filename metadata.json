@@ -1,0 +1,8 @@
+{
+  "name": "Ena's Kitchen - EK Traiteur",
+  "description": "Application mobile e-commerce de dégustation cocktail pour Ena's Kitchen (EK Traiteur - Bordeaux)",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

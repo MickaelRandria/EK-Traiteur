@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <!-- Prevent getter-only fetch property exceptions in sandboxed iframe environments -->
+    <script>
+      (function() {
+        try {
+          var target = window;
+          while (target) {
+            var desc = Object.getOwnPropertyDescriptor(target, 'fetch');
+            if (desc) {
+              if (desc.get && !desc.set) {
+                var currentFetch = window.fetch;
+                try {
+                  Object.defineProperty(target, 'fetch', {
+                    get: function() { return currentFetch; },
+                    set: function(val) { currentFetch = val; },
+                    configurable: true,
+                    enumerable: true
+                  });
+                } catch (err) {
+                  try {
+                    Object.defineProperty(window, 'fetch', {
+                      get: function() { return currentFetch; },
+                      set: function(val) { currentFetch = val; },
+                      configurable: true,
+                      enumerable: true
+                    });
+                  } catch (e2) {}
+                }
+              }
+              break;
+            }
+            target = Object.getPrototypeOf(target);
+          }
+        } catch (e) {}
+
+        // Global safety net for getter-only property assignments in iframe
+        window.addEventListener('error', function(event) {
+          if (event && event.message && event.message.indexOf('fetch') !== -1 && event.message.indexOf('getter') !== -1) {
+            event.preventDefault();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+            return true;
+          }
+        });
+      })();
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#161914" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="EK Traiteur" />
+    <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/pwa-192x192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <title>Ena's Kitchen - EK Traiteur</title>
+    <meta name="description" content="Application mobile e-commerce de dégustation cocktail pour Ena's Kitchen (EK Traiteur - Bordeaux)" />
+    <meta property="og:title" content="Ena's Kitchen - EK Traiteur" />
+    <meta property="og:description" content="Application mobile e-commerce de dégustation cocktail pour Ena's Kitchen (EK Traiteur - Bordeaux)" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anton&family=Plus+Jakarta+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+  </head>
+  <body class="bg-[#e9ecef] text-[#141613] antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
