@@ -1,0 +1,54 @@
+{
+  "mode": "image_gen reference editing, transparent background",
+  "notes": "Approximate viewpoints reordered after visual review. Hidden geometry inferred by AI; not a calibrated 3D reconstruction.",
+  "frames": [
+    {
+      "angle": 0,
+      "file": "angle-000.webp",
+      "prompt": "Existing reference cutout",
+      "generated": false
+    },
+    {
+      "angle": 45,
+      "file": "angle-045.webp",
+      "prompt": "Generate one transparent product photo frame for a 360 degree turntable of the EXACT same single chicken bao in the reference. Requested viewpoint: front-left three-quarter view showing the opening from the opposite side from reference. The bao has physically rotated 315 degrees clockwise about its vertical axis from the reference. Keep its identity: ivory folded steamed bun, same glossy reddish glazed chicken, cucumber slices, thin carrot strips; no new garnish or ingredients. Same soft lighting, camera height slightly above product, centered square canvas, entire bao visible with transparent margin and same product scale. Crucially reveal the requested side or closed back instead of repeating the front. No text, props, plate or background. Hidden geometry is reconstructed plausibly.",
+      "generated": true
+    },
+    {
+      "angle": 90,
+      "file": "angle-090.webp",
+      "prompt": "Same bao right side view at 90 degrees.",
+      "generated": true
+    },
+    {
+      "angle": 135,
+      "file": "angle-135.webp",
+      "prompt": "Generate one transparent product photo frame for a 360 degree turntable of the EXACT same single chicken bao in the reference. Requested viewpoint: rear-right three-quarter view: mostly the smooth CLOSED BACK of the folded bun; chicken filling only peeks at far left edge. The bao has physically rotated 135 degrees clockwise about its vertical axis from the reference. Keep its identity: ivory folded steamed bun, same glossy reddish glazed chicken, cucumber slices, thin carrot strips; no new garnish or ingredients. Same soft lighting, camera height slightly above product, centered square canvas, entire bao visible with transparent margin and same product scale. Crucially reveal the requested side or closed back instead of repeating the front. No text, props, plate or background. Hidden geometry is reconstructed plausibly.",
+      "generated": true
+    },
+    {
+      "angle": 180,
+      "file": "angle-180.webp",
+      "prompt": "Closed rear view correction; original recipe fully occluded behind bun.",
+      "generated": true
+    },
+    {
+      "angle": 225,
+      "file": "angle-225.webp",
+      "prompt": "Generate one transparent product photo frame for a 360 degree turntable of the EXACT same single chicken bao in the reference. Requested viewpoint: rear-left three-quarter view: mostly smooth CLOSED BACK of folded bun, filling only peeks at far right edge. The bao has physically rotated 225 degrees clockwise about its vertical axis from the reference. Keep its identity: ivory folded steamed bun, same glossy reddish glazed chicken, cucumber slices, thin carrot strips; no new garnish or ingredients. Same soft lighting, camera height slightly above product, centered square canvas, entire bao visible with transparent margin and same product scale. Crucially reveal the requested side or closed back instead of repeating the front. No text, props, plate or background. Hidden geometry is reconstructed plausibly.",
+      "generated": true
+    },
+    {
+      "angle": 270,
+      "file": "angle-270.webp",
+      "prompt": "Generate one transparent product photo frame for a 360 degree turntable of the EXACT same single chicken bao in the reference. Requested viewpoint: LEFT SIDE PROFILE from the opposite end to the other side: narrow end of folded bao faces camera, chicken and cucumber peek from the right side of the fold. The bao has physically rotated 270 degrees clockwise about its vertical axis from the reference. Keep its identity: ivory folded steamed bun, same glossy reddish glazed chicken, cucumber slices, thin carrot strips; no new garnish or ingredients. Same soft lighting, camera height slightly above product, centered square canvas, entire bao visible with transparent margin and same product scale. Crucially reveal the requested side or closed back instead of repeating the front. No text, props, plate or background. Hidden geometry is reconstructed plausibly.",
+      "generated": true
+    },
+    {
+      "angle": 315,
+      "file": "angle-315.webp",
+      "prompt": "Generate one transparent product photo frame for a 360 degree turntable of the EXACT same single chicken bao in the reference. Requested viewpoint: front-right three-quarter view, opening visible but narrower than reference. The bao has physically rotated 45 degrees clockwise about its vertical axis from the reference. Keep its identity: ivory folded steamed bun, same glossy reddish glazed chicken, cucumber slices, thin carrot strips; no new garnish or ingredients. Same soft lighting, camera height slightly above product, centered square canvas, entire bao visible with transparent margin and same product scale. Crucially reveal the requested side or closed back instead of repeating the front. No text, props, plate or background. Hidden geometry is reconstructed plausibly.",
+      "generated": true
+    }
+  ]
+}
