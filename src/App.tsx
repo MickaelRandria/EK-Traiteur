@@ -1,358 +1,486 @@
-import React, { useState, useMemo } from 'react';
-import { MenuItem, CartItem, CategoryType, OrderSubmission } from './types';
-import { MENU_DATA } from './data/menuData';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { AnimatePresence, LayoutGroup, MotionConfig, motion } from 'motion/react';
+import { ArrowRight, Check } from 'lucide-react';
+import { MenuItem, CartItem, CategoryType, EventPlan, OrderSubmission } from './types';
+import { MENU_DATA, DIET_FILTERS, DietFilter } from './data/menuData';
 export { MENU_DATA };
 import { Header } from './components/Header';
-import { ProductCarouselPicker } from './components/ProductCarouselPicker';
-import { ChefSelectionCarousel } from './components/ChefSelectionCarousel';
-import { BottomBar } from './components/BottomBar';
-import { CartModal } from './components/CartModal';
+import { Hero } from './components/Hero';
+import { MenuGrid } from './components/MenuGrid';
+import { SelectionBar } from './components/SelectionBar';
+import { SelectionPage } from './components/SelectionPage';
+import { EventComposer } from './components/EventComposer';
 import { OrderCheckoutModal } from './components/OrderCheckoutModal';
-import { EmailConfirmationModal } from './components/EmailConfirmationModal';
-import { ProductDetailModal } from './components/ProductDetailModal';
-import { FavoritesModal } from './components/FavoritesModal';
-import { ContactModal } from './components/ContactModal';
-import { SearchModal } from './components/SearchModal';
-import { FilterSettingsModal } from './components/FilterSettingsModal';
+import { OrderConfirmationModal } from './components/OrderConfirmationModal';
+import { ProductDetail } from './components/ProductDetail';
+import { MenuSheet } from './components/MenuSheet';
+import { FavoritesSheet } from './components/FavoritesSheet';
+import { ContactSheet } from './components/ContactSheet';
+import { FilterSheet } from './components/FilterSheet';
+import { SearchOverlay } from './components/SearchOverlay';
+import { SplashIntro, useSplash, SPLASH_DURATION } from './components/SplashIntro';
 import { PWAInstallButton } from './components/PWAInstallButton';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { Plus, Check, Sparkles, ChefHat } from 'lucide-react';
+import { usePersistentState } from './hooks/usePersistentState';
+import { EASE_OUT } from './components/ui/motion';
+import {
+  describeEvent,
+  getCartTotal,
+  getPiecesCount,
+  getRecommendedPieces,
+  isQuoteItem,
+  MIN_PIECES_PER_VARIETY,
+} from './utils/order';
+
+type StoredCartEntry = { id: string; quantity: number };
+type SortBy = 'featured' | 'price-asc' | 'price-desc';
+
+/** Vignette qui « vole » de la création jusqu'au sac lors d'un ajout */
+interface Flyer {
+  id: number;
+  src: string;
+  from: { x: number; y: number; w: number; h: number };
+  to: { x: number; y: number };
+}
+
+const findMenuItem = (id: string) => MENU_DATA.find((item) => item.id === id);
+
+const scrollToMenu = () => {
+  document.getElementById('carte')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
 
 export default function App() {
-  // Navigation & Category States
-  const [activeTab, setActiveTab] = useState<'home' | 'cart' | 'favorites' | 'contact'>('home');
+  const showSplash = useSplash();
+  const heroDelay = showSplash ? SPLASH_DURATION + 0.15 : 0.15;
+
+  // Filtres de la carte
   const [selectedCategory, setSelectedCategory] = useState<CategoryType>('all');
-  const [dietFilter, setDietFilter] = useState('all');
-  const [sortBy, setSortBy] = useState<'featured' | 'price-asc' | 'price-desc'>('featured');
+  const [dietFilter, setDietFilter] = useState<DietFilter>('all');
+  const [sortBy, setSortBy] = useState<SortBy>('featured');
 
-  // Interactive Cart & Orders State (Initial state with 20 pieces default to showcase tray)
-  const [cartItems, setCartItems] = useState<CartItem[]>([
-    {
-      item: MENU_DATA[0], // Mini burger top pick
-      quantity: 20
-    }
-  ]);
-  const [favorites, setFavorites] = useState<MenuItem[]>([
-    MENU_DATA[0],
-    MENU_DATA[1],
-  ]);
+  // Sélection, favoris et réception sauvegardés sur l'appareil (identifiants réhydratés depuis le catalogue)
+  const [cartItems, setCartItems] = usePersistentState<CartItem[], StoredCartEntry[]>(
+    'ek_cart',
+    [],
+    (items) => items.map((entry) => ({ id: entry.item.id, quantity: entry.quantity })),
+    (stored) =>
+      stored.flatMap((entry) => {
+        const item = findMenuItem(entry.id);
+        return item ? [{ item, quantity: entry.quantity }] : [];
+      })
+  );
+  const [favorites, setFavorites] = usePersistentState<MenuItem[], string[]>(
+    'ek_favorites',
+    [],
+    (items) => items.map((item) => item.id),
+    (ids) => ids.flatMap((id) => findMenuItem(id) ?? [])
+  );
+  const [eventPlan, setEventPlan] = usePersistentState<EventPlan | null>('ek_event', null);
 
-  // Modal Dialogs
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  // Écrans et panneaux
+  const [isSelectionOpen, setIsSelectionOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isEmailConfirmationOpen, setIsEmailConfirmationOpen] = useState(false);
-  const [lastOrder, setLastOrder] = useState<OrderSubmission | null>(null);
+  const [isConfirmationOpen, setIsConfirmationOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
+  const [isContactOpen, setIsContactOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [isFilterSettingsOpen, setIsFilterSettingsOpen] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [detail, setDetail] = useState<{ item: MenuItem; shared: boolean } | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [lastOrder, setLastOrder] = useState<OrderSubmission | null>(null);
 
-  // Filtered Items Logic
+  // Retours visuels
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const [flyers, setFlyers] = useState<Flyer[]>([]);
+  const bagRef = useRef<HTMLButtonElement>(null);
+
   const filteredItems = useMemo(() => {
     let list = MENU_DATA;
-
-    if (selectedCategory !== 'all') {
-      list = list.filter((item) => item.category === selectedCategory);
-    }
-
-    if (dietFilter === 'veggie') {
-      list = list.filter((item) => item.category === 'vegetarien' || item.badges.includes('Végétarien'));
-    } else if (dietFilter === 'fish') {
-      list = list.filter((item) => item.allergens?.includes('Poisson'));
-    } else if (dietFilter === 'meat') {
-      list = list.filter((item) => item.ingredients?.some(i => i.toLowerCase().includes('bœuf') || i.toLowerCase().includes('poulet') || i.toLowerCase().includes('canard')));
-    }
-
-    if (sortBy === 'price-asc') {
-      list = [...list].sort((a, b) => a.price - b.price);
-    } else if (sortBy === 'price-desc') {
-      list = [...list].sort((a, b) => b.price - a.price);
-    }
-
+    if (selectedCategory !== 'all') list = list.filter((item) => item.category === selectedCategory);
+    const diet = DIET_FILTERS.find((d) => d.id === dietFilter);
+    if (diet) list = list.filter(diet.matches);
+    if (sortBy === 'price-asc') list = [...list].sort((a, b) => a.price - b.price);
+    else if (sortBy === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
     return list;
   }, [selectedCategory, dietFilter, sortBy]);
 
-  // Totals calculations
-  const totalPieces = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.quantity, 0);
-  }, [cartItems]);
-
-  const totalPrice = useMemo(() => {
-    return cartItems.reduce((sum, item) => sum + item.item.price * item.quantity, 0);
-  }, [cartItems]);
-
-  const showToast = (message: string) => {
-    setToastMessage(message);
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 2800);
+  const filtersActive = selectedCategory !== 'all' || dietFilter !== 'all' || sortBy !== 'featured';
+  const resetFilters = () => {
+    setSelectedCategory('all');
+    setDietFilter('all');
+    setSortBy('featured');
   };
 
-  // Cart operations (respecting minimum 20 pieces)
-  const handleQuickAdd = (item: MenuItem, quantity: number = 20) => {
+  // Les créations sur devis ne comptent ni en pièces ni dans le total
+  const totalPieces = useMemo(() => getPiecesCount(cartItems), [cartItems]);
+  const totalPrice = useMemo(() => getCartTotal(cartItems), [cartItems]);
+  const recommended = eventPlan ? getRecommendedPieces(eventPlan) : null;
+
+  const showToast = (message: string) => {
+    clearTimeout(toastTimeout.current);
+    setToastMessage(message);
+    toastTimeout.current = setTimeout(() => setToastMessage(null), 2800);
+  };
+
+  const launchFlyer = useCallback((src: string, origin?: HTMLElement | null) => {
+    const bag = bagRef.current?.getBoundingClientRect();
+    const start = origin?.getBoundingClientRect();
+    if (!bag || !start || start.width === 0) {
+      return;
+    }
+    setFlyers((prev) => [
+      ...prev,
+      {
+        id: Date.now() + Math.random(),
+        src,
+        from: { x: start.left, y: start.top, w: start.width, h: start.height },
+        to: { x: bag.left + bag.width / 2, y: bag.top + bag.height / 2 },
+      },
+    ]);
+  }, []);
+
+  const handleAdd = (item: MenuItem, quantity: number = MIN_PIECES_PER_VARIETY, origin?: HTMLElement | null) => {
+    const isQuote = isQuoteItem(item);
+    const alreadyRequested = isQuote && cartItems.some((entry) => entry.item.id === item.id);
     setCartItems((prev) => {
       const existing = prev.find((entry) => entry.item.id === item.id);
       if (existing) {
+        // Une création sur devis n'est demandée qu'une fois
+        if (isQuote) return prev;
         return prev.map((entry) =>
-          entry.item.id === item.id
-            ? { ...entry, quantity: entry.quantity + quantity }
-            : entry
+          entry.item.id === item.id ? { ...entry, quantity: entry.quantity + quantity } : entry
         );
       }
-      return [...prev, { item, quantity }];
+      return [...prev, { item, quantity: isQuote ? 1 : quantity }];
     });
-    showToast(`+${quantity} ${item.name} ajoutés au plateau`);
-  };
-
-  const handleUpdateQuantity = (id: string, newQty: number) => {
-    if (newQty <= 0) {
-      handleRemoveItem(id);
-      return;
+    // Un retour discret suffit : le produit reste visible pendant la sélection.
+    if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      launchFlyer(item.cutout ?? item.image, origin);
     }
-    setCartItems((prev) =>
-      prev.map((entry) =>
-        entry.item.id === id ? { ...entry, quantity: newQty } : entry
-      )
+    showToast(
+      alreadyRequested
+        ? 'Cette création est déjà dans votre demande'
+        : isQuote
+          ? `Demande de devis ajoutée`
+          : `${quantity} pièces ajoutées à votre sélection`
     );
   };
 
-  const handleRemoveItem = (id: string) => {
-    setCartItems((prev) => prev.filter((entry) => entry.item.id !== id));
+  const handleUpdateQuantity = (id: string, quantity: number) => {
+    if (quantity <= 0) {
+      handleRemove(id);
+      return;
+    }
+    setCartItems((prev) => prev.map((entry) => (entry.item.id === id ? { ...entry, quantity } : entry)));
   };
 
-  // Favorites toggle
+  const handleRemove = (id: string) => setCartItems((prev) => prev.filter((entry) => entry.item.id !== id));
+
   const handleToggleFavorite = (item: MenuItem) => {
-    setFavorites((prev) => {
-      const exists = prev.some((fav) => fav.id === item.id);
-      if (exists) {
-        showToast(`Retiré des favoris`);
-        return prev.filter((fav) => fav.id !== item.id);
-      }
-      showToast(`Ajouté aux favoris ❤️`);
-      return [...prev, item];
-    });
+    const exists = favorites.some((fav) => fav.id === item.id);
+    setFavorites((prev) => (exists ? prev.filter((fav) => fav.id !== item.id) : [...prev, item]));
+    showToast(exists ? 'Retiré de vos favoris' : 'Ajouté à vos favoris');
   };
 
-  // Open item details
-  const handleSelectItem = (item: MenuItem) => {
-    setSelectedItem(item);
+  const openItem = (item: MenuItem, shared: boolean) => {
+    setDetail({ item, shared });
     setIsDetailOpen(true);
   };
 
-  // Order confirmation flow
+  const closeAllPanels = () => {
+    setIsMenuOpen(false);
+    setIsFavoritesOpen(false);
+    setIsContactOpen(false);
+    setIsSearchOpen(false);
+    setIsSelectionOpen(false);
+  };
+
+  const browseMenu = () => {
+    closeAllPanels();
+    // laisse les panneaux se refermer avant de défiler
+    setTimeout(scrollToMenu, 350);
+  };
+
+  const handleEventConfirmed = (plan: EventPlan) => {
+    setEventPlan(plan);
+    setIsComposerOpen(false);
+    showToast(`Réception enregistrée : environ ${getRecommendedPieces(plan)} pièces conseillées`);
+    if (!isSelectionOpen) setTimeout(scrollToMenu, 450);
+  };
+
   const handleOrderConfirmed = (order: OrderSubmission) => {
     setLastOrder(order);
     setIsCheckoutOpen(false);
-    setIsEmailConfirmationOpen(true);
-    // Clear or reset cart after validated order
+    setIsSelectionOpen(false);
+    setIsConfirmationOpen(true);
+    // Le récapitulatif est parti sur WhatsApp : on vide la sélection
     setCartItems([]);
   };
 
-  // Chef Selection items
-  const chefSelectionItems = useMemo(() => {
-    return MENU_DATA.filter((i) => i.isChefCollection);
-  }, []);
-
-  const topPickItem = MENU_DATA[0]; // Mini burger
+  // Touche Échap : ferme l'écran du dessus
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (isConfirmationOpen) setIsConfirmationOpen(false);
+      else if (isComposerOpen) setIsComposerOpen(false);
+      else if (isCheckoutOpen) setIsCheckoutOpen(false);
+      else if (isDetailOpen) setIsDetailOpen(false);
+      else if (isSearchOpen) setIsSearchOpen(false);
+      else if (isFilterOpen) setIsFilterOpen(false);
+      else if (isMenuOpen) setIsMenuOpen(false);
+      else if (isFavoritesOpen) setIsFavoritesOpen(false);
+      else if (isContactOpen) setIsContactOpen(false);
+      else if (isSelectionOpen) setIsSelectionOpen(false);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    isConfirmationOpen,
+    isComposerOpen,
+    isCheckoutOpen,
+    isDetailOpen,
+    isSearchOpen,
+    isFilterOpen,
+    isMenuOpen,
+    isFavoritesOpen,
+    isContactOpen,
+    isSelectionOpen,
+  ]);
 
   return (
-    <div className="w-full max-w-md md:max-w-4xl lg:max-w-5xl mx-auto min-h-screen bg-[#F8F9FA] relative flex flex-col transition-all duration-300">
-      {/* Offline Status */}
-      <OfflineIndicator />
+    <MotionConfig reducedMotion="user">
+      <LayoutGroup>
+        <SplashIntro show={showSplash} />
+        <OfflineIndicator />
 
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="fixed top-4 left-0 right-0 max-w-md md:max-w-xl mx-auto px-4 z-50 flex items-center justify-center pointer-events-none animate-in fade-in slide-in-from-top duration-300">
-          <div className="bg-[#141613] text-white text-xs font-semibold px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 border border-white/10 pointer-events-auto">
-            <Check className="w-3.5 h-3.5 text-[#5B6B54]" />
-            <span className="truncate">{toastMessage}</span>
-          </div>
+        <a href="#carte" className="skip-link">Aller aux créations</a>
+        <div className="atelier-shell min-h-screen bg-ivory relative flex flex-col">
+          <Header
+            onOpenMenu={() => setIsMenuOpen(true)}
+            onOpenSearch={() => setIsSearchOpen(true)}
+            onOpenSelection={() => setIsSelectionOpen(true)}
+            selectionCount={totalPieces || cartItems.length}
+            onBrowse={scrollToMenu}
+            bagRef={bagRef}
+          />
+
+          <PWAInstallButton variant="banner" />
+
+          <main className="flex-1 pb-32">
+            <Hero
+              delay={heroDelay}
+              onCompose={() => setIsComposerOpen(true)}
+              onBrowse={scrollToMenu}
+              eventSummary={eventPlan ? describeEvent(eventPlan) : null}
+            />
+
+            <MenuGrid
+              items={filteredItems}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+              filtersActive={filtersActive}
+              onOpenFilters={() => setIsFilterOpen(true)}
+              onResetFilters={resetFilters}
+              favorites={favorites}
+              onToggleFavorite={handleToggleFavorite}
+              onOpenItem={(item) => openItem(item, true)}
+              onAdd={handleAdd}
+              openItemId={isDetailOpen && detail?.shared && !detail.item.cutout ? detail.item.id : null}
+            />
+
+            <MaisonSection onCompose={() => setIsComposerOpen(true)} onContact={() => setIsContactOpen(true)} />
+          </main>
         </div>
-      )}
 
-      {/* Top Header */}
-      <Header
-        onOpenSettings={() => setIsFilterSettingsOpen(true)}
-        onOpenSearch={() => setIsSearchOpen(true)}
-      />
-
-      {/* PWA Install Banner */}
-      <PWAInstallButton variant="banner" />
-
-      {/* Main Scrollable App Content */}
-      <main className="flex-1 pb-28 select-none">
-        {/* Immersive Product Carousel Picker (Inspiré de l'écran de référence) */}
-        <ProductCarouselPicker
-          items={MENU_DATA}
-          selectedCategory={selectedCategory}
-          onSelectCategory={(cat) => setSelectedCategory(cat)}
-          favorites={favorites}
-          onToggleFavorite={handleToggleFavorite}
-          onSelectItem={handleSelectItem}
-          onAddToCart={handleQuickAdd}
+        <SelectionBar
+          visible={cartItems.length > 0 && !isSelectionOpen && !isCheckoutOpen && !isDetailOpen}
+          pieces={totalPieces}
+          total={totalPrice}
+          recommended={recommended}
+          guests={eventPlan?.guests}
+          onOpen={() => setIsSelectionOpen(true)}
         />
 
-        {/* Chef Selection Carousel (Sélection du moment) */}
-        <ChefSelectionCarousel
-          items={chefSelectionItems}
-          onSelectItem={handleSelectItem}
-          onQuickAdd={handleQuickAdd}
-          onViewAll={() => setSelectedCategory('all')}
+        <SelectionPage
+          open={isSelectionOpen}
+          onClose={() => setIsSelectionOpen(false)}
+          cartItems={cartItems}
+          pieces={totalPieces}
+          total={totalPrice}
+          event={eventPlan}
+          recommended={recommended}
+          onUpdateQuantity={handleUpdateQuantity}
+          onRemove={handleRemove}
+          onAdd={handleAdd}
+          onCompose={() => setIsComposerOpen(true)}
+          onBrowse={browseMenu}
+          onCheckout={() => setIsCheckoutOpen(true)}
         />
 
-        {/* Filtered / Full Menu Section if a specific filter is clicked */}
-        {selectedCategory !== 'all' && (
-          <section className="px-5 pt-2 pb-4">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-bold text-[#141613] tracking-tight">
-                Créations {selectedCategory.toUpperCase()} ({filteredItems.length})
-              </h2>
-              <span className="text-[10px] text-gray-500">Min. 20 pcs / variété</span>
-            </div>
+        <EventComposer
+          open={isComposerOpen}
+          onClose={() => setIsComposerOpen(false)}
+          initialPlan={eventPlan}
+          onConfirm={handleEventConfirmed}
+        />
 
-            <div className="space-y-3">
-              {filteredItems.map((item) => (
-                <div
-                  key={item.id}
-                  onClick={() => handleSelectItem(item)}
-                  className="bg-white p-3.5 rounded-2xl shadow-xs border border-gray-100 flex items-center justify-between gap-3 cursor-pointer hover:shadow-md transition-all group"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      referrerPolicy="no-referrer"
-                      className="w-16 h-16 rounded-xl object-cover border border-gray-200 shrink-0 group-hover:scale-105 transition-transform"
-                    />
-                    <div className="min-w-0">
-                      <h3 className="text-xs font-bold text-[#141613] truncate">
-                        {item.name}
-                      </h3>
-                      <p className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
-                        {item.description}
-                      </p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs font-black text-[#5B6B54]">
-                          {item.priceDisplay || `${item.price.toFixed(2)} € / pc`}
-                        </span>
-                        <span className="text-[9px] font-semibold bg-[#F6F4EB] text-[#5B6B54] px-1.5 py-0.5 rounded">
-                          {item.categoryLabel}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+        <OrderCheckoutModal
+          isOpen={isCheckoutOpen}
+          onClose={() => setIsCheckoutOpen(false)}
+          cartItems={cartItems}
+          totalPieces={totalPieces}
+          totalPrice={totalPrice}
+          event={eventPlan}
+          onOrderConfirmed={handleOrderConfirmed}
+        />
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleQuickAdd(item, item.priceDisplay ? 1 : 20);
-                    }}
-                    className="shrink-0 bg-[#141613] hover:bg-[#5B6B54] text-white text-[10px] font-bold px-3 py-1.5 rounded-full flex items-center gap-1 shadow-xs transition-colors"
-                  >
-                    <Plus className="w-3 h-3" />
-                    <span>{item.priceDisplay ? 'Devis' : '+20 pcs'}</span>
-                  </button>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* Floating Bottom Navigation Bar (Home, Cart, Favorites, Contact) */}
-      <BottomBar
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab);
-          if (tab === 'home') {
+        <OrderConfirmationModal
+          isOpen={isConfirmationOpen}
+          order={lastOrder}
+          onClose={() => {
+            setIsConfirmationOpen(false);
             window.scrollTo({ top: 0, behavior: 'smooth' });
-          }
-        }}
-        totalPieces={totalPieces}
-        favoritesCount={favorites.length}
-      />
+          }}
+        />
 
-      {/* Cart Modal / Drawer */}
-      <CartModal
-        isOpen={activeTab === 'cart'}
-        onClose={() => setActiveTab('home')}
-        cartItems={cartItems}
-        onUpdateQuantity={handleUpdateQuantity}
-        onRemoveItem={handleRemoveItem}
-        onProceedToCheckout={() => {
-          setIsCheckoutOpen(true);
-        }}
-        totalPieces={totalPieces}
-        totalPrice={totalPrice}
-      />
+        <ProductDetail
+          key={detail?.item.id}
+          item={detail?.item ?? null}
+          open={isDetailOpen}
+          sharedImage={detail?.shared ?? false}
+          onClose={() => setIsDetailOpen(false)}
+          isFavorite={detail ? favorites.some((f) => f.id === detail.item.id) : false}
+          onToggleFavorite={handleToggleFavorite}
+          onAdd={handleAdd}
+        />
 
-      {/* Checkout Form Modal */}
-      <OrderCheckoutModal
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cartItems={cartItems}
-        totalPieces={totalPieces}
-        totalPrice={totalPrice}
-        onOrderConfirmed={handleOrderConfirmed}
-      />
+        <MenuSheet
+          open={isMenuOpen}
+          onClose={() => setIsMenuOpen(false)}
+          favoritesCount={favorites.length}
+          onCompose={() => {
+            setIsMenuOpen(false);
+            setIsComposerOpen(true);
+          }}
+          onBrowse={browseMenu}
+          onOpenFavorites={() => {
+            setIsMenuOpen(false);
+            setIsFavoritesOpen(true);
+          }}
+          onOpenContact={() => {
+            setIsMenuOpen(false);
+            setIsContactOpen(true);
+          }}
+        />
 
-      {/* Email Confirmation Modal */}
-      <EmailConfirmationModal
-        isOpen={isEmailConfirmationOpen}
-        order={lastOrder}
-        onClose={() => {
-          setIsEmailConfirmationOpen(false);
-          setActiveTab('home');
-        }}
-      />
+        <FavoritesSheet
+          open={isFavoritesOpen}
+          onClose={() => setIsFavoritesOpen(false)}
+          favorites={favorites}
+          onRemoveFavorite={handleToggleFavorite}
+          onOpenItem={(item) => openItem(item, false)}
+        />
 
-      {/* Product Detail Modal */}
-      <ProductDetailModal
-        item={selectedItem}
-        isOpen={isDetailOpen}
-        onClose={() => setIsDetailOpen(false)}
-        isFavorite={selectedItem ? favorites.some((f) => f.id === selectedItem.id) : false}
-        onToggleFavorite={handleToggleFavorite}
-        onAddToCart={handleQuickAdd}
-      />
+        <ContactSheet open={isContactOpen} onClose={() => setIsContactOpen(false)} />
 
-      {/* Favorites Modal */}
-      <FavoritesModal
-        isOpen={activeTab === 'favorites'}
-        onClose={() => setActiveTab('home')}
-        favorites={favorites}
-        onRemoveFavorite={handleToggleFavorite}
-        onSelectItem={handleSelectItem}
-        onQuickAdd={handleQuickAdd}
-      />
+        <SearchOverlay
+          open={isSearchOpen}
+          onClose={() => setIsSearchOpen(false)}
+          items={MENU_DATA}
+          onOpenItem={(item) => openItem(item, false)}
+        />
 
-      {/* Contact Modal */}
-      <ContactModal
-        isOpen={activeTab === 'contact'}
-        onClose={() => setActiveTab('home')}
-      />
+        <FilterSheet
+          open={isFilterOpen}
+          onClose={() => setIsFilterOpen(false)}
+          items={MENU_DATA}
+          resultsCount={filteredItems.length}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          dietFilter={dietFilter}
+          setDietFilter={setDietFilter}
+          sortBy={sortBy}
+          setSortBy={setSortBy}
+          onReset={resetFilters}
+        />
 
-      {/* Search Modal */}
-      <SearchModal
-        isOpen={isSearchOpen}
-        onClose={() => setIsSearchOpen(false)}
-        items={MENU_DATA}
-        onSelectItem={handleSelectItem}
-        onQuickAdd={handleQuickAdd}
-      />
+        {/* Vignettes en vol vers le sac */}
+        <div className="fixed inset-0 z-[85] pointer-events-none" aria-hidden="true">
+          <AnimatePresence>
+            {flyers.map((f) => {
+              const size = 28;
+              const endX = f.to.x - size / 2;
+              const endY = f.to.y - size / 2;
+              // L'image s'élève d'abord au-dessus de son point de départ, puis plonge vers le sac
+              const midX = f.from.x + (endX - f.from.x) * 0.3;
+              const midY = Math.max(12, f.from.y - 120);
+              return (
+                <motion.img
+                  key={f.id}
+                  src={f.src}
+                  alt=""
+                  className="absolute top-0 left-0 object-cover rounded-[2px] shadow-xl"
+                  initial={{ x: f.from.x, y: f.from.y, width: f.from.w, height: f.from.h, opacity: 1, borderRadius: 2 }}
+                  animate={{
+                    x: [f.from.x, midX, endX],
+                    y: [f.from.y, midY, endY],
+                    width: [f.from.w, f.from.w * 0.45, size],
+                    height: [f.from.h, f.from.h * 0.45, size],
+                    borderRadius: [2, 12, size / 2],
+                    opacity: [1, 1, 0.4],
+                  }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.85, ease: [0.55, 0, 0.3, 1], times: [0, 0.45, 1] }}
+                  onAnimationComplete={() => {
+                    setFlyers((prev) => prev.filter((x) => x.id !== f.id));
+                  }}
+                />
+              );
+            })}
+          </AnimatePresence>
+        </div>
 
-      {/* Filter Settings Modal */}
-      <FilterSettingsModal
-        isOpen={isFilterSettingsOpen}
-        onClose={() => setIsFilterSettingsOpen(false)}
-        selectedCategory={selectedCategory}
-        onSelectCategory={(cat) => setSelectedCategory(cat)}
-        dietFilter={dietFilter}
-        setDietFilter={setDietFilter}
-        sortBy={sortBy}
-        setSortBy={setSortBy}
-      />
-    </div>
+        {/* Notification */}
+        <div className="fixed top-3 left-0 right-0 z-[90] flex justify-center px-14 pointer-events-none">
+          <AnimatePresence>
+            {toastMessage && (
+              <motion.div
+                key={toastMessage}
+                role="status"
+                initial={{ opacity: 0, y: -12, scale: 0.96 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                transition={{ duration: 0.35, ease: EASE_OUT }}
+                className="bg-ink text-ivory text-[13px] px-4 py-2.5 rounded-full shadow-2xl flex items-center gap-2 max-w-full"
+              >
+                <Check className="w-4 h-4 text-[#C9B98F] shrink-0" strokeWidth={1.6} />
+                <span className="truncate">{toastMessage}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </LayoutGroup>
+    </MotionConfig>
   );
 }
+
+const MAISON_FACTS = ['Fait maison', 'Bordeaux & CUB', 'Livraison ou retrait', 'Dès 20 pièces par création'];
+
+const MaisonSection: React.FC<{ onCompose: () => void; onContact: () => void }> = ({ onCompose, onContact }) => (
+  <>
+    <section id="maison" className="maison-section scroll-mt-24">
+      <span className="eyebrow">03 — La maison</span>
+      <h2 className="maison-quote">Le goût du fait maison.<br />Le plaisir de <em>faire plaisir.</em></h2>
+      <p className="text-sm leading-relaxed max-w-lg text-[#D3DCCB] mb-7">Chez Ena’s Kitchen, chaque pièce se prépare avec soin. Des recettes généreuses, des détails qui comptent et l’envie de rendre vos moments encore plus beaux.</p>
+      <ul className="maison-facts">{MAISON_FACTS.map(fact => <li key={fact}>{fact}</li>)}</ul>
+      <div className="maison-contact">
+        <button type="button" onClick={onCompose} className="text-link">Imaginons votre réception <ArrowRight className="w-4 h-4" strokeWidth={1.4} /></button>
+        <button type="button" onClick={onContact} className="text-link">Une envie particulière ? Écrivez-nous <ArrowRight className="w-4 h-4" strokeWidth={1.4} /></button>
+      </div>
+    </section>
+    <footer className="atelier-footer"><span>© Ena’s Kitchen · Bordeaux</span><span>De petites créations. De grands moments.</span></footer>
+  </>
+);

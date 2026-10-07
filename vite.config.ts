@@ -16,9 +16,9 @@ export default defineConfig(() => {
           id: '/',
           name: "Ena's Kitchen - EK Traiteur",
           short_name: 'EK Traiteur',
-          description: "Application mobile e-commerce de dégustation cocktail pour Ena's Kitchen (EK Traiteur - Bordeaux)",
-          theme_color: '#161914',
-          background_color: '#161914',
+          description: "L’art de recevoir. Créations artisanales et réceptions à Bordeaux avec Ena’s Kitchen.",
+          theme_color: '#F8F5EF',
+          background_color: '#F8F5EF',
           display: 'standalone',
           orientation: 'portrait',
           start_url: '/',
@@ -45,52 +45,14 @@ export default defineConfig(() => {
             },
           ],
         },
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'gstatic-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/i\.imgur\.com\/.*/i,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'imgur-images-cache',
-                expiration: {
-                  maxEntries: 50,
-                  maxAgeSeconds: 60 * 60 * 24 * 30,
-                },
-                cacheableResponse: {
-                  statuses: [0, 200],
-                },
-              },
-            },
-          ],
+        // Le worker est compilé par Vite : les chemins contenant une apostrophe
+        // ne passent plus par les imports non échappés du générateur Workbox.
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'sw.ts',
+        injectManifest: {
+          globPatterns: ['**/*.{js,css,html,ico,png,jpg,webp,svg,woff,woff2}'],
+          globIgnores: ['**/products/cutouts/*-isolated.png'],
         },
         devOptions: {
           enabled: false,

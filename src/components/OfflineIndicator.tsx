@@ -10,14 +10,14 @@ export const OfflineIndicator: React.FC = () => {
   return (
     <div 
       id="pwa-offline-indicator"
-      className="fixed top-3 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2.5 rounded-full bg-[#1c211a]/95 backdrop-blur-md px-4 py-2 text-xs font-semibold text-[#fae092] border border-[#d4af37]/30 shadow-xl animate-fade-in"
+      className="fixed top-3 left-1/2 -translate-x-1/2 z-[90] flex items-center gap-2.5 rounded-full bg-ink/95 backdrop-blur-md px-4 py-2 text-xs text-ivory shadow-xl"
     >
       <span className="relative flex h-2.5 w-2.5">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C9B98F] opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#C9B98F]"></span>
       </span>
-      <WifiOff className="w-3.5 h-3.5 text-[#fae092]" />
-      <span>Mode hors-ligne — Catalogue en cache disponible</span>
+      <WifiOff className="w-3.5 h-3.5" strokeWidth={1.4} />
+      <span>Hors ligne — la carte reste consultable</span>
     </div>
   );
 };

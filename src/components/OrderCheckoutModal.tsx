@@ -1,6 +1,21 @@
 import React, { useState } from 'react';
-import { X, Mail, Phone, Calendar, MapPin, CheckCircle2, ShieldCheck } from 'lucide-react';
-import { CartItem, OrderSubmission } from '../types';
+import { motion } from 'motion/react';
+import { MessageCircle } from 'lucide-react';
+import { CartItem, EventPlan, OrderSubmission } from '../types';
+import { usePersistentState } from '../hooks/usePersistentState';
+import {
+  buildOrderMessage,
+  describeEvent,
+  formatPrice,
+  generateOrderNumber,
+  getItemsBelowMinimum,
+  getMinEventDate,
+  getWhatsAppUrl,
+  MIN_LEAD_DAYS,
+  MIN_PIECES_PER_VARIETY,
+} from '../utils/order';
+import { Page } from './ui/Page';
+import { EASE_OUT } from './ui/motion';
 
 interface OrderCheckoutModalProps {
   isOpen: boolean;
@@ -8,8 +23,25 @@ interface OrderCheckoutModalProps {
   cartItems: CartItem[];
   totalPieces: number;
   totalPrice: number;
+  event: EventPlan | null;
   onOrderConfirmed: (order: OrderSubmission) => void;
 }
+
+/** Coordonnées mémorisées sur l'appareil pour pré-remplir la prochaine commande */
+interface CustomerDetails {
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+}
+
+const EMPTY_CUSTOMER: CustomerDetails = { name: '', email: '', phone: '', address: '' };
+
+const stagger = (i: number) => ({
+  initial: { opacity: 0, y: 16 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.7, delay: 0.2 + i * 0.07, ease: EASE_OUT },
+});
 
 export const OrderCheckoutModal: React.FC<OrderCheckoutModalProps> = ({
   isOpen,
@@ -17,37 +49,46 @@ export const OrderCheckoutModal: React.FC<OrderCheckoutModalProps> = ({
   cartItems,
   totalPieces,
   totalPrice,
+  event,
   onOrderConfirmed,
 }) => {
-  const [customerName, setCustomerName] = useState('Micka Randrianan');
-  const [customerEmail, setCustomerEmail] = useState('mickarandrianan@gmail.com');
-  const [customerPhone, setCustomerPhone] = useState('06 52 48 19 02');
-  const [eventDate, setEventDate] = useState(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 7);
-    return d.toISOString().split('T')[0];
-  });
+  const [customer, setCustomer] = usePersistentState<CustomerDetails>('ek_customer', EMPTY_CUSTOMER);
+  const [eventDate, setEventDate] = useState('');
   const [deliveryType, setDeliveryType] = useState<'delivery' | 'pickup'>('delivery');
-  const [deliveryAddress, setDeliveryAddress] = useState('14 Quai des Chartrons, 33000 Bordeaux');
   const [notes, setNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  if (!isOpen) return null;
+  const minDate = getMinEventDate();
+  const updateCustomer = (field: keyof CustomerDetails) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setCustomer((prev) => ({ ...prev, [field]: e.target.value }));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
+    setError(null);
 
-    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    if (cartItems.length === 0) {
+      setError('Votre sélection est vide.');
+      return;
+    }
+    if (getItemsBelowMinimum(cartItems).length > 0) {
+      setError(`Minimum ${MIN_PIECES_PER_VARIETY} pièces par création : ajustez votre sélection.`);
+      return;
+    }
+    if (eventDate < minDate) {
+      setError(`Merci de choisir une date à au moins ${MIN_LEAD_DAYS} jours, le temps de préparer votre commande.`);
+      return;
+    }
+
     const newOrder: OrderSubmission = {
-      orderNumber: `EK-BDX-${randomSuffix}`,
-      customerName,
-      customerEmail,
-      customerPhone,
+      orderNumber: generateOrderNumber(),
+      customerName: customer.name.trim(),
+      customerEmail: customer.email.trim() || undefined,
+      customerPhone: customer.phone.trim(),
       eventDate,
       deliveryType,
-      deliveryAddress: deliveryType === 'delivery' ? deliveryAddress : 'Retrait à l’Atelier EK Traiteur (Bordeaux)',
+      deliveryAddress: deliveryType === 'delivery' ? customer.address.trim() : 'Retrait à l’Atelier EK Traiteur (Bordeaux)',
       notes,
+      event,
       items: [...cartItems],
       totalPieces,
       totalPrice,
@@ -60,217 +101,153 @@ export const OrderCheckoutModal: React.FC<OrderCheckoutModalProps> = ({
       }),
     };
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      onOrderConfirmed(newOrder);
-    }, 400);
+    // Ouverture synchrone (dans le geste utilisateur) pour éviter le blocage des pop-ups
+    window.open(getWhatsAppUrl(buildOrderMessage(newOrder)), '_blank', 'noopener,noreferrer');
+    setNotes('');
+    setEventDate('');
+    onOrderConfirmed(newOrder);
   };
 
   return (
-    <div 
-      className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-end justify-center sm:items-center p-0 sm:p-4 animate-in fade-in duration-200"
-      onClick={onClose}
-    >
-      <div 
-        id="checkout-drawer"
-        onClick={(e) => e.stopPropagation()}
-        className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden border border-gray-100 animate-in slide-in-from-bottom duration-300"
-      >
-        {/* Header */}
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between bg-[#F8F9FA]">
-          <div>
-            <span className="text-[10px] font-bold text-[#5B6B54] uppercase tracking-wider">
-              Étape finale • Validation
-            </span>
-            <h2 className="text-base font-bold text-[#141613]">
-              Confirmation de Commande
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white text-gray-400 hover:text-gray-700 flex items-center justify-center border border-gray-200 shadow-xs"
-          >
-            <X className="w-4 h-4" />
+    <Page
+      open={isOpen}
+      onClose={onClose}
+      label="Finaliser ma commande"
+      topLabel="Les derniers détails · 03 / 03"
+      step={3}
+      zIndex={50}
+      footer={
+        <div className="flex flex-col gap-3">
+          {error && (
+            <motion.p
+              role="alert"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-xs text-[#9B3B2E]"
+            >
+              {error}
+            </motion.p>
+          )}
+          <button type="submit" form="checkout-form" className="btn-primary w-full">
+            <MessageCircle className="w-4 h-4" strokeWidth={1.4} />
+            Envoyer sur WhatsApp
           </button>
+          <p className="text-[11px] text-muted text-center">
+            Le récapitulatif s'ouvre dans WhatsApp : envoyez-le pour transmettre votre commande.
+          </p>
         </div>
+      }
+    >
+      <form id="checkout-form" onSubmit={handleSubmit} className="px-6 pt-4 pb-6 flex flex-col gap-7" noValidate={false}>
+        <motion.div {...stagger(0)} className="flex flex-col gap-1">
+          <span className="eyebrow mb-3">À nous de préparer la suite</span>
+          <h1 className="font-serif font-medium text-[42px] tracking-[-0.03em] leading-[1.05]">Votre moment<br /><em>prend forme.</em></h1>
+          <p className="text-[13px] text-muted">
+            {event ? `${describeEvent(event)} · ` : ''}
+            {totalPieces} pièces · {formatPrice(totalPrice)}
+          </p>
+        </motion.div>
 
-        {/* Order Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Quick Summary Strip */}
-          <div className="bg-[#F6F4EB] p-3 rounded-2xl flex items-center justify-between border border-amber-950/5">
-            <div>
-              <p className="text-xs font-bold text-[#141613]">Dégustation {totalPieces} pièces</p>
-              <p className="text-[11px] text-gray-500">EK Traiteur Bordeaux</p>
-            </div>
-            <div className="text-right">
-              <span className="text-sm font-black text-[#141613]">{totalPrice.toFixed(2)} €</span>
-              <p className="text-[10px] text-[#5B6B54] font-semibold">TTC</p>
-            </div>
+        <motion.div {...stagger(1)} className="flex flex-col gap-5">
+          <div>
+            <label htmlFor="checkout-name" className="field-label">Nom complet ou société</label>
+            <input id="checkout-name" type="text" required autoComplete="name" value={customer.name} onChange={updateCustomer('name')} placeholder="Prénom Nom" className="field" />
+          </div>
+          <div>
+            <label htmlFor="checkout-phone" className="field-label">Téléphone</label>
+            <input
+              id="checkout-phone"
+              type="tel"
+              required
+              autoComplete="tel"
+              pattern="[0-9+ .\-\(\)]{10,}"
+              title="Numéro de téléphone (10 chiffres minimum)"
+              value={customer.phone}
+              onChange={updateCustomer('phone')}
+              placeholder="06 12 34 56 78"
+              className="field"
+            />
+          </div>
+          <div>
+            <label htmlFor="checkout-email" className="field-label">
+              E-mail <span className="text-[#A19D90]">(facultatif)</span>
+            </label>
+            <input id="checkout-email" type="email" autoComplete="email" value={customer.email} onChange={updateCustomer('email')} placeholder="vous@exemple.fr" className="field" />
+          </div>
+        </motion.div>
+
+        <motion.div {...stagger(2)} className="flex flex-col gap-5">
+          <h2 className="eyebrow">Votre réception</h2>
+          <div>
+            <label htmlFor="checkout-date" className="field-label">Date de l'événement</label>
+            <input id="checkout-date" type="date" required min={minDate} value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="field" />
+            <p className="text-[11px] text-muted mt-1.5">Au minimum {MIN_LEAD_DAYS} jours avant l'événement.</p>
           </div>
 
-          {/* Contact Details */}
-          <div className="space-y-3">
-            <h3 className="text-xs font-bold text-[#141613] uppercase tracking-wider">
-              1. Coordonnées & Contact
-            </h3>
-            
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                Nom complet / Société
-              </label>
-              <input
-                type="text"
-                required
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Ex: Micka Randrianan"
-                className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA]"
-              />
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                Email de confirmation (Envoi automatique)
-              </label>
-              <div className="relative">
-                <Mail className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                <input
-                  type="email"
-                  required
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  placeholder="votre.email@domaine.com"
-                  className="w-full text-xs font-medium pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA]"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                Téléphone de contact
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                <input
-                  type="tel"
-                  required
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  placeholder="06 XX XX XX XX"
-                  className="w-full text-xs font-medium pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA]"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Event Details */}
-          <div className="space-y-3 pt-2">
-            <h3 className="text-xs font-bold text-[#141613] uppercase tracking-wider">
-              2. Modalités de la Dégustation
-            </h3>
-
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                Date de l'événement à Bordeaux
-              </label>
-              <div className="relative">
-                <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                <input
-                  type="date"
-                  required
-                  value={eventDate}
-                  onChange={(e) => setEventDate(e.target.value)}
-                  className="w-full text-xs font-medium pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA]"
-                />
-              </div>
-            </div>
-
-            {/* Delivery Type */}
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1.5">
-                Service souhaité
-              </label>
-              <div className="grid grid-cols-2 gap-2">
+          <div role="radiogroup" aria-label="Service souhaité" className="grid grid-cols-2 gap-2">
+            {([
+              ['delivery', 'Livraison', 'Bordeaux & CUB'],
+              ['pickup', 'Retrait', "À l'atelier"],
+            ] as const).map(([value, label, hint]) => {
+              const active = deliveryType === value;
+              return (
                 <button
+                  key={value}
                   type="button"
-                  onClick={() => setDeliveryType('delivery')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
-                    deliveryType === 'delivery'
-                      ? 'bg-[#141613] text-white border-[#141613]'
-                      : 'bg-[#F8F9FA] text-gray-600 border-gray-200 hover:bg-gray-100'
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setDeliveryType(value)}
+                  className={`relative h-16 rounded-[2px] border flex flex-col items-center justify-center gap-0.5 transition-colors duration-300 ${
+                    active ? 'border-sage text-ivory' : 'border-line-strong hover:border-sage'
                   }`}
                 >
-                  Livraison Bordeaux & CUB
+                  {active && (
+                    <motion.span
+                      layoutId="delivery-highlight"
+                      className="absolute inset-0 bg-sage rounded-[1px]"
+                      transition={{ type: 'spring', stiffness: 400, damping: 34 }}
+                    />
+                  )}
+                  <span className="relative font-serif text-[19px] leading-none">{label}</span>
+                  <span className={`relative text-[11px] ${active ? 'text-ivory/75' : 'text-muted'}`}>{hint}</span>
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setDeliveryType('pickup')}
-                  className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all text-center ${
-                    deliveryType === 'pickup'
-                      ? 'bg-[#141613] text-white border-[#141613]'
-                      : 'bg-[#F8F9FA] text-gray-600 border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  Retrait Atelier EK
-                </button>
-              </div>
-            </div>
-
-            {deliveryType === 'delivery' && (
-              <div>
-                <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                  Adresse de livraison (Bordeaux / Gironde)
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
-                  <input
-                    type="text"
-                    required
-                    value={deliveryAddress}
-                    onChange={(e) => setDeliveryAddress(e.target.value)}
-                    placeholder="Adresse complète"
-                    className="w-full text-xs font-medium pl-9 pr-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA]"
-                  />
-                </div>
-              </div>
-            )}
-
-            <div>
-              <label className="block text-[11px] font-semibold text-gray-600 mb-1">
-                Remarques ou précisions (allergies, horaires...)
-              </label>
-              <textarea
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                rows={2}
-                placeholder="Ex: Cocktail dînatoire prévu pour 19h30, prévoir 1 plateau végétarien à part."
-                className="w-full text-xs font-medium px-3.5 py-2 rounded-xl border border-gray-200 focus:outline-hidden focus:border-[#5B6B54] bg-[#F8F9FA] resize-none"
-              />
-            </div>
+              );
+            })}
           </div>
 
-          <div className="flex items-center gap-2 text-[11px] text-[#5B6B54] bg-[#5B6B54]/10 p-2.5 rounded-xl font-medium">
-            <ShieldCheck className="w-4 h-4 shrink-0" />
-            <span>Votre réservation déclenchera un e-mail officiel de confirmation avec récapitulatif détaillé.</span>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="w-full py-3 px-4 rounded-full bg-[#5B6B54] hover:bg-[#4E5F48] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-lg transition-all active:scale-98"
+          <motion.div
+            initial={false}
+            animate={{ height: deliveryType === 'delivery' ? 'auto' : 0, opacity: deliveryType === 'delivery' ? 1 : 0 }}
+            transition={{ duration: 0.4, ease: EASE_OUT }}
+            className="overflow-hidden"
           >
-            {isSubmitting ? (
-              <span>Génération de l’e-mail de confirmation...</span>
-            ) : (
-              <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>Confirmer et recevoir l'email</span>
-              </>
-            )}
-          </button>
-        </form>
-      </div>
-    </div>
+            <label htmlFor="checkout-address" className="field-label">Adresse de livraison</label>
+            <input
+              id="checkout-address"
+              type="text"
+              required={deliveryType === 'delivery'}
+              disabled={deliveryType !== 'delivery'}
+              autoComplete="street-address"
+              value={customer.address}
+              onChange={updateCustomer('address')}
+              placeholder="N°, rue, code postal, ville"
+              className="field"
+            />
+          </motion.div>
+
+          <div>
+            <label htmlFor="checkout-notes" className="field-label">Précisions (allergies, horaires…)</label>
+            <textarea
+              id="checkout-notes"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              placeholder="Ex : cocktail prévu à 19h30, un plateau végétarien à part."
+              className="field resize-none"
+            />
+          </div>
+        </motion.div>
+      </form>
+    </Page>
   );
 };

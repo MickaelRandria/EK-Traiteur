@@ -13,7 +13,8 @@ export const MENU_DATA: MenuItem[] = [
     price: 1.60,
     description: 'Pains vapeur ultra-moelleux garnis de poulet laqué croustillant, concombre frais et carottes marinées, accompagnés de mini buns dorés.',
     badges: ['Coup de Cœur', 'Gourmet', 'Fait Maison'],
-    image: 'https://i.imgur.com/JqqBPoX.jpg',
+    image: '/products/bao-poulet.jpg',
+    cutout: '/products/cutouts/bao-poulet-isolated.webp',
     rating: 4.9,
     reviewsCount: 142,
     isTopPick: true,
@@ -35,7 +36,8 @@ export const MENU_DATA: MenuItem[] = [
     price: 1.60,
     description: 'Aiguillettes de volaille laquées à la sauce dynamite maison, graines de sésame et jeunes pousses en barquette individuelle de bambou.',
     badges: ['Populaire', 'Chaud', 'Épicé Doux'],
-    image: 'https://i.imgur.com/k2bK8fh.jpg',
+    image: '/products/poulet-dynamite.jpg',
+    cutout: '/products/cutouts/poulet-dynamite-isolated.webp',
     rating: 4.9,
     reviewsCount: 98,
     isChefCollection: true,
@@ -56,7 +58,8 @@ export const MENU_DATA: MenuItem[] = [
     price: 1.50,
     description: 'Assortiment généreux de navettes briochées dorées au sésame, cornets de wraps croustillants et mini-bouchées salées du chef.',
     badges: ['Signature', 'Assortiment', 'Incontournable'],
-    image: 'https://i.imgur.com/jkmR9kD.jpg',
+    image: '/products/plateau-signature.jpg',
+    cutout: '/products/cutouts/plateau-signature-isolated.webp',
     rating: 5.0,
     reviewsCount: 165,
     isChefCollection: true,
@@ -76,7 +79,8 @@ export const MENU_DATA: MenuItem[] = [
     price: 1.60,
     description: 'Velouté frais maison surmonté d\'un dôme de pousses germées croquantes, servi avec mini burgers briochés snackés minute.',
     badges: ['Fraîcheur', 'Verrine', 'Duo Créatif'],
-    image: 'https://i.imgur.com/yDh2laF.jpg',
+    image: '/products/verrine-graines-germees.jpg',
+    cutout: '/products/cutouts/verrine-graines-germees-isolated.webp',
     rating: 4.8,
     reviewsCount: 87,
     isChefCollection: true,
@@ -96,7 +100,9 @@ export const MENU_DATA: MenuItem[] = [
     price: 1.60,
     description: 'Mini tartelettes sablées aux fruits de saison et verrines crémeuses au coulis de caramel fondant et éclats de spéculoos.',
     badges: ['Douceur', 'Pâtisserie', 'Gourmand'],
-    image: 'https://i.imgur.com/KgBxFZ4.jpg',
+    image: '/products/mignardises-sucrees.jpg',
+    cutout: '/products/cutouts/mignardises-sucrees-isolated.webp',
+    isSweet: true,
     rating: 4.9,
     reviewsCount: 118,
     isChefCollection: true,
@@ -114,10 +120,13 @@ export const MENU_DATA: MenuItem[] = [
     name: 'Number cake artisanal fruits rouges & macarons',
     category: 'gourmet',
     categoryLabel: 'Création d\'Exception',
-    price: 3.50,
+    price: 0,
+    priceDisplay: 'Sur devis',
     description: 'Pâte sablée croustillante, ganache montée vanille onctueuse, parterre de fruits rouges frais, macarons et fleurs comestibles.',
     badges: ['Sur Devis', 'Événementiel', 'Pièce Unique'],
-    image: 'https://i.imgur.com/Rmao4fN.jpg',
+    image: '/products/number-cake.jpg',
+    cutout: '/products/cutouts/number-cake-isolated.webp',
+    isSweet: true,
     rating: 5.0,
     reviewsCount: 76,
     isChefCollection: true,
@@ -133,9 +142,43 @@ export const MENU_DATA: MenuItem[] = [
 ];
 
 export const CATEGORIES: { id: CategoryType; label: string }[] = [
-  { id: 'all', label: 'Tout le Catalogue' },
+  { id: 'all', label: 'Tout' },
   { id: 'gourmet', label: 'Gourmet & Créations' },
   { id: 'classique', label: 'Plateaux Salés' },
   { id: 'verrines', label: 'Verrines Traiteur' },
+  { id: 'sucre', label: 'Douceurs Sucrées' },
+  { id: 'evenementiel', label: 'Événementiel' },
+  { id: 'vegetarien', label: 'Végétarien' },
 ];
+
+export type DietFilter = 'all' | 'veggie' | 'fish' | 'meat';
+
+const ingredientsMatch = (item: MenuItem, words: string[]) =>
+  item.ingredients?.some((i) => words.some((w) => i.toLowerCase().includes(w))) ?? false;
+
+/**
+ * Filtres de régime. Une option n'est proposée que si au moins une création y correspond
+ * (voir getAvailableDietFilters) : ajouter un badge « Végétarien » ou l'allergène « Poisson »
+ * à un produit fait apparaître le filtre correspondant automatiquement.
+ */
+export const DIET_FILTERS: { id: DietFilter; label: string; matches: (item: MenuItem) => boolean }[] = [
+  { id: 'all', label: 'Tous', matches: () => true },
+  {
+    id: 'veggie',
+    label: '100% Végétarien',
+    matches: (item) => item.category === 'vegetarien' || item.badges.includes('Végétarien'),
+  },
+  { id: 'fish', label: 'Poissons & Saumon', matches: (item) => item.allergens?.includes('Poisson') ?? false },
+  {
+    id: 'meat',
+    label: 'Volaille & Viandes',
+    matches: (item) => ingredientsMatch(item, ['bœuf', 'boeuf', 'poulet', 'volaille', 'canard']),
+  },
+];
+
+export const getAvailableCategories = (items: MenuItem[]) =>
+  CATEGORIES.filter((c) => c.id === 'all' || items.some((item) => item.category === c.id));
+
+export const getAvailableDietFilters = (items: MenuItem[]) =>
+  DIET_FILTERS.filter((d) => d.id === 'all' || items.some(d.matches));
 
